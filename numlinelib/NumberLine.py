@@ -1,4 +1,7 @@
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
 from numlinelib.exceptions import (
     MissingPointsError,
     MultidimensionalPointsError,
@@ -75,10 +78,21 @@ class NumberLine:
         Args:
             points (iterable): Points to be sanitized.
         """
-        # check for pandas, numpy, list, etc. and dimensionality
-        if False:
+        # converty numpy to a list
+        if type(points) == np.ndarray:
+            new_list = points.tolist()
+        # convert pandas to a list
+        elif type(points) == pd.DataFrame:
+            new_list = points.values.tolist()
+        else:
+            new_list = points
+        # empty list
+        if len(new_list) == 0:
+            raise MissingPointsError("No points provided (points={}).".format(points))
+        # not a list of ints or floats
+        if type(new_list[0]) == list:
             raise MultidimensionalPointsError("Input points are not one-dimensional.")
-        return points
+        return new_list
 
     def add_points(self, points):
         """Adds points to the plot.
