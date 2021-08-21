@@ -12,3 +12,11 @@ class MultidimensionalPointsError(RuntimeError):
     def __init__(self, message=None):
         self.message = message
         super().__init__(message)
+
+
+class InvalidLimitError(RuntimeError):
+    """Min must be lower than max, max must be higher than min."""
+
+    def __init__(self, message=None):
+        self.message = message
+        super().__init__(message)
