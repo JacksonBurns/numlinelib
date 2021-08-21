@@ -1,5 +1,8 @@
 import matplotlib.pyplot as plt
-from numlinelib.exceptions import MissingPointsError
+from numlinelib.exceptions import (
+    MissingPointsError,
+    MultidimensionalPointsError,
+)
 
 
 class NumberLine:
@@ -18,7 +21,26 @@ class NumberLine:
                 self.set_points(kwargs["points"])
             else:
                 raise MissingPointsError("No points provided.")
-            self.show()
+            # set the max and min or calculate them
+            if kwargs.get("max", False):
+                self.set_max(kwargs["max"])
+            else:
+                self._calc_max(kwargs["points"])
+            if kwargs.get("min", False):
+                self.set_max(kwargs["min"])
+            else:
+                self._calc_min(kwargs["points"])
+            # do not show plot if indicated
+            if kwargs.get("show", True):
+                self.show()
+            else:
+                return
+        return
+
+    def _calc_min(self, points):
+        return
+
+    def _calc_max(self, points):
         return
 
     def _sanitize_input(self, points):
@@ -28,6 +50,8 @@ class NumberLine:
             points (iterable): Points to be sanitized.
         """
         # check for pandas, numpy, list, etc. and dimensionality
+        if False:
+            raise MultidimensionalPointsError("Input points are not one-dimensional.")
         return points
 
     def add_points(self, points):
@@ -69,17 +93,22 @@ class NumberLine:
     def set_ticks(self, ticks):
         return
 
-    def get_max(self):
+    def get_ticks(self):
         return
 
-    def set_max(self, max):
+    def get_max(self):
         return
 
     def get_min(self):
         return
 
-    def set_min(self, min):
-        return
+    def get_points(self):
+        """Return the current points.
+
+        Returns:
+            list: points currently on the number line.
+        """
+        return self._points
 
     def get_lim(self):
         """Returns a tuple of (min, max)
@@ -102,5 +131,6 @@ class NumberLine:
 
     def show(self):
         """Show the number line, return the figure."""
+        plt.plot(self.get_points())
         plt.show()
         return self.fig
