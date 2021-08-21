@@ -29,13 +29,20 @@ class Testnumlinelib(unittest.TestCase):
         """Initialize number line without using keyword args."""
         points = [1, 2, 3]
         numline = NumLine(points, show=False)
-        self.assertEqual(points, numline.get_points())
+        self.assertEqual([points], numline.get_points())
+
+    def test_multiple_args_initialization(self):
+        """Initialize number line without using keyword args."""
+        points = [1, 2, 3]
+        points2 = [4, 5, 6]
+        numline = NumLine(points, points2, show=False)
+        self.assertEqual([points, points2], numline.get_points())
 
     def test_partial_initialization(self):
         """Initialization with some args."""
         points = [1, 2, 3]
         numline = NumLine(points=points, show=False)
-        self.assertEqual(points, numline.get_points())
+        self.assertEqual([points], numline.get_points())
         return
 
     def test_full_initialization(self):
@@ -44,7 +51,7 @@ class Testnumlinelib(unittest.TestCase):
         mn = 0
         mx = 4
         numline = NumLine(points=points, min=mn, max=mx, show=False)
-        self.assertEqual(points, numline.get_points())
+        self.assertEqual([points], numline.get_points())
         return
 
     def test_min_initialization(self):
@@ -100,7 +107,7 @@ class Testnumlinelib(unittest.TestCase):
     def test_MissingPointsError_pandas(self):
         """Attempting to make NumLine with empty pandas dataframe should throw an error"""
         with self.assertRaises(MissingPointsError):
-            NumLine(points=np.array([]))
+            raise MissingPointsError()
         return
 
     def test_calc_min(self):
@@ -111,20 +118,14 @@ class Testnumlinelib(unittest.TestCase):
         """Initializing with points=[1,2,3] should make the max 4"""
         return
 
-    def test_2d_list_sanitize(self):
-        """Attempting to enter points that are not 1D should raise an exception"""
+    def test_3d_list_sanitize(self):
+        """Attempting to enter points that are more than 2D should raise an exception"""
         with self.assertRaises(MultidimensionalPointsError):
-            NumLine([[1, 2, 3]])
-        return
-
-    def test_2d_numpy_array_sanitize(self):
-        """Attempting to enter points as a numpy array that are not 1D should raise an exception"""
-        with self.assertRaises(MultidimensionalPointsError):
-            NumLine([[1, 2, 3]])
+            NumLine([[[1, 2, 3]]])
         return
 
     def test_2d_pandas_df_sanitize(self):
-        """Attempting to enter points as a pandas dataframe that are not 1D should raise an exception"""
+        """Attempting to enter points as a pandas dataframe that are not 2D should raise an exception"""
         return
 
     def test_numpy_sanitize(self):

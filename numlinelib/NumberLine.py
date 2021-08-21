@@ -11,12 +11,13 @@ from numlinelib.exceptions import (
 
 class NumberLine:
     def __init__(self, *args, **kwargs):
-        """Expects points (keyword optional), max, min, ticks, show (bool), marker, color, size, xlabel, title"""
+        """Expects points (keyword optional), max, min, ticks, show (bool), marker, color, size, labels, xlabel, title"""
         self.fig = plt.figure(figsize=(6, 1))
         self._max = None
         self._min = None
         self._ticks = None
         self._points = None
+        self._labels = None
         # return the instance of the class
         if not kwargs and not args:
             return
@@ -24,7 +25,12 @@ class NumberLine:
         else:
             # ensure user has provided points
             if args:
-                self.set_points(args[0])
+                self.set_points(args)
+            elif type(kwargs.get("points", 0)) == np.ndarray:
+                if kwargs.get("points").size > 0:
+                    self.set_points(kwargs["points"])
+                else:
+                    raise MissingPointsError("No points provided.")
             elif kwargs.get("points", False):
                 self.set_points(kwargs["points"])
             else:
@@ -43,6 +49,7 @@ class NumberLine:
                 self._ticks = self.set_ticks(kwargs["ticks"])
             else:
                 self._ticks = "auto"
+            self._labels = kwargs.get("labels", [])
             # do not show plot if indicated
             if kwargs.get("show", True):
                 self.show(
@@ -62,7 +69,7 @@ class NumberLine:
         Returns:
             number: Minimum of points minus 1.
         """
-        return min(self.get_points()) - 1
+        return np.min(self.get_points()) - 1
 
     def _calc_max(self):
         """Add 1 to max of points for max.
@@ -70,14 +77,17 @@ class NumberLine:
         Returns:
             number: Maximum of points plus 1.
         """
-        return max(self.get_points()) + 1
+        return np.max(self.get_points()) + 1
 
     def _sanitize_input(self, points):
-        """Return a 1D array.
+        """Return a nested list with equal length elements.
 
         Args:
             points (iterable): Points to be sanitized.
         """
+        # convert args input to a nested list
+        if type(points) == tuple:
+            points = list(points)
         # converty numpy to a list
         if type(points) == np.ndarray:
             new_list = points.tolist()
@@ -91,17 +101,32 @@ class NumberLine:
             raise MissingPointsError("No points provided (points={}).".format(points))
         # not a list of ints or floats
         if type(new_list[0]) == list:
-            raise MultidimensionalPointsError("Input points are not one-dimensional.")
+            try:
+                new_list[0][0][0]
+                raise MultidimensionalPointsError(
+                    "Input points are not one- or two-dimensional."
+                )
+            except IndexError:
+                raise MissingPointsError(
+                    "No points provided in inner group (points={}).".format(points)
+                )
+            except TypeError:
+                pass
+        # catch one dimensional lists
+        if type(new_list[0]) != list:
+            new_list = [new_list]
         return new_list
 
-    def add_points(self, points):
+    def add_points(self, points, label=None):
         """Adds points to the plot.
 
         Args:
             points (list): Points to be added.
         """
-        self._sanitize_input(points)
-        self._points.extend(points)
+        new_list = self._sanitize_input(points)
+        self._points.extend(new_list)
+        if label is not None:
+            self._labels.extend(label)
         return
 
     def set_points(self, points):
@@ -122,7 +147,26 @@ class NumberLine:
 
     def clear_figure(self):
         """Return to an empty figure."""
+        self.fig.clf()
         return
+
+    def clear_all(self):
+        """Reset all values to defaults."""
+        self.clear_points()
+        self.clear_figure()
+        self._min = None
+        self._max = None
+        self._labels = None
+        self._ticks = None
+        return
+
+    def get_labels(self):
+        """Return the current labels if set, else None.
+
+        Returns:
+            list: List of strings.
+        """
+        return self._labels
 
     def set_max(self, mx):
         """Set the maximum for the number line.
@@ -240,16 +284,30 @@ class NumberLine:
     def show(self, **kwargs):
         """Show the number line, return the figure."""
         # plot the data horizontally
-        plot = plt.scatter(
-            self.get_points(),
-            [0 for _ in self.get_points()],
-            zorder=10,
-            clip_on=False,
-            marker=kwargs.get("marker", "."),
-            color=kwargs.get("color", "g"),
-            edgecolors="k",
-            s=kwargs.get("s", 400),
-        )
+        if len(self.get_points()) == 1:
+            plot = plt.scatter(
+                self.get_points(),
+                [0 for _ in self.get_points()],
+                zorder=10,
+                clip_on=False,
+                marker=kwargs.get("marker", "."),
+                color=kwargs.get("color", "g"),
+                edgecolors="k",
+                s=kwargs.get("s", 400),
+            )
+        else:
+            for idx, pnts in zip(range(len(self.get_points())), self.get_points()):
+                plot = plt.scatter(
+                    pnts,
+                    [0 for _ in pnts],
+                    zorder=10,
+                    clip_on=False,
+                    marker=kwargs.get("marker", "."),
+                    color=kwargs.get("color", "auto")[idx],
+                    label=self.get_labels()[idx],
+                    edgecolors="k",
+                    s=kwargs.get("s", 400),
+                )
         # set the limits
         plt.xlim(self.get_min(), self.get_max())
         plt.ylim(0, 1)
